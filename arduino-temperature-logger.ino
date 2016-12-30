@@ -1,5 +1,5 @@
 // Dietrich Reidenbaugh
-// June 2016
+// Updated December 2016
 
 #include <LiquidCrystal.h>
 #include <math.h>
@@ -42,6 +42,8 @@ int button_L_Time = 0;
 int button_R_Time = 0;
 int button_L_Time_Previous;
 int button_R_Time_Previous;
+
+int loops_Since_Action = 0;
 
 float tempSensorValue;
 float vcc; // Arduino voltage supply in mV
@@ -107,6 +109,7 @@ void loop() {
   }
   minutesElapsed = secondsElapsed / 60;
   hoursElapsed = minutesElapsed / 60;
+  loops_Since_Action++;
 
   // Update button hold time variables
   button_L_Pressed = digitalRead(pin_Button_L);
@@ -162,6 +165,7 @@ void loop() {
         Serial.print("Time: ");
         Serial.print(millis() / 1000.0);
         Serial.println(" | Ending Write to EPROM");
+        loops_Since_Action = 0;
       }
       // If the display position is -2, read from EEPROM,
       else if (displayIndex == -2)
@@ -172,7 +176,8 @@ void loop() {
         readFromEEPROM();
         Serial.print("Time: ");
         Serial.print(millis() / 1000.0);
-        Serial.println(" | Ending Read from EPROM");
+        Serial.println(" | Ending Read from EEPROM");
+        loops_Since_Action = 0;
       }
     }
     // If both buttons have been released after at least 0.5 seconds,
@@ -189,6 +194,7 @@ void loop() {
         Serial.print("Time: ");
         Serial.print(millis() / 1000.0);
         Serial.println(" | Ending Read from SRAM");
+        loops_Since_Action = 0;
       }
     }
     // If the right button was pressed briefly, increase display index
@@ -386,8 +392,18 @@ void updateScreen()
   // If in display mode 'd',
   if (displayMode == 'd')
   {
+    // If the right button is being held, prompt to keep holding
+    if (button_R_Time >= 20 && button_L_Time == 0)
+    {
+      lcd.setCursor(0, 0);
+      lcd.print("Exit Data Mode");
+      lcd.print("                ");
+      lcd.setCursor(0, 1);
+      lcd.print("Continue Holding");
+      lcd.print("                ");
+    }
     // In position -3, show Write to EEPROM option
-    if (displayIndex == -3)
+    else if (displayIndex == -3)
     {
       lcd.setCursor(0, 0);
       lcd.print("Write to EEPROM");
@@ -402,6 +418,11 @@ void updateScreen()
       else if (button_L_Time >= 1 && button_R_Time >= 1)
       {
         lcd.print("Continue Holding");
+      }
+      // If the action just completed, show confirmation
+      else if (loops_Since_Action < 100)
+      {
+        lcd.print("Write Complete");
       }
       // If the button is not being held, print instruction to hold it
       else
@@ -429,6 +450,11 @@ void updateScreen()
         else if (button_L_Time >= 1 && button_R_Time >= 1)
         {
           lcd.print("Continue Holding");
+        }
+        // If the action just completed, show confirmation
+        else if (loops_Since_Action < 100)
+        {
+          lcd.print("Read Complete");
         }
         // If the button is not being held, print instruction to hold it
         else
@@ -461,6 +487,11 @@ void updateScreen()
         else if (button_L_Time >= 1 && button_R_Time >= 1)
         {
           lcd.print("Continue Holding");
+        }
+        // If the action just completed, show confirmation
+        else if (loops_Since_Action < 100)
+        {
+          lcd.print("Read Complete");
         }
         // If the button is not being held, print instruction to hold it
         else
@@ -510,8 +541,18 @@ void updateScreen()
   // If in display mode 's',
   if (displayMode == 's')
   {
+    // If the left button is being held, prompt to keep holding
+    if (button_L_Time >= 20 && button_R_Time == 0)
+    {
+      lcd.setCursor(0, 0);
+      lcd.print("Exit Settings");
+      lcd.print("                ");
+      lcd.setCursor(0, 1);
+      lcd.print("Continue Holding");
+      lcd.print("                ");
+    }
     // In position -1, show backlight toggle option
-    if (displayIndex == -1)
+    else if (displayIndex == -1)
     {
       lcd.setCursor(0, 0);
       lcd.print("Backlight Toggle");
