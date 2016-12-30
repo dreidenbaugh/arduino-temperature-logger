@@ -137,12 +137,18 @@ void loop() {
       displayMode = 'd';
       displayIndex = 0;
     }
+    // If the left button has been pressed, switch to display mode 's'
+    if (button_L_Time == 0 && button_L_Time_Previous >= 1 && button_L_Time_Previous <= 50)
+    {
+      displayMode = 's';
+      displayIndex = 0;
+    }
   }
 
   // If in display mode 'd',
   else if (displayMode == 'd')
   {
-    // If the button has been released after at least 3 seconds,
+    // If both buttons have been released after at least 3 seconds,
     if ((button_L_Time == 0 || button_R_Time == 0) && button_L_Time_Previous >= 300
         && button_R_Time_Previous >= 300)
     {
@@ -169,7 +175,7 @@ void loop() {
         Serial.println(" | Ending Read from EPROM");
       }
     }
-    // If the button has been released after at least 0.5 seconds,
+    // If both buttons have been released after at least 0.5 seconds,
     else if ((button_L_Time == 0 || button_R_Time == 0) && button_L_Time_Previous >= 50
              && button_R_Time_Previous >= 50)
     {
@@ -202,6 +208,53 @@ void loop() {
       {
         displayIndex--;
       }
+    }
+  }
+  // If in display mode 's',
+  else if (displayMode == 's')
+  {
+    // If both buttons have been released after at least 0.5 seconds,
+    if ((button_L_Time == 0 || button_R_Time == 0) && button_L_Time_Previous >= 50
+             && button_R_Time_Previous >= 50)
+    {
+      // If the display position is -1, toggle backlight
+      if (displayIndex == -1)
+      {
+        
+        Serial.print("Time: ");
+        Serial.print(millis() / 1000.0);
+        if(LCD_Backlight_Enabled == 0)
+        {
+          LCD_Backlight_Enabled = 1;
+          Serial.println(" | Enabling Backlight");
+        }
+        else
+        {
+          LCD_Backlight_Enabled = 0;
+          Serial.println(" | Disabling Backlight");          
+        }
+      }
+    }
+    // If the right button was pressed briefly, increase display index if less than 0
+    else if (button_R_Time == 0 && button_R_Time_Previous >= 1 && button_R_Time_Previous <= 50)
+    {
+      if (displayIndex < 0)
+      {
+        displayIndex++;
+      }
+    }
+    // If the left button was pressed briefly, decrease display index if greater than -1
+    else if (button_L_Time == 0 && button_L_Time_Previous >= 1 && button_L_Time_Previous <= 50)
+    {
+      if (displayIndex > -1)
+      {
+        displayIndex--;
+      }
+    }
+    // If the left (but not right) button is held for 1 second, exit to display mode 'l'
+    else if (button_L_Time >= 100 && button_R_Time == 0)
+    {
+      displayMode = 'l';
     }
   }
 
@@ -454,14 +507,42 @@ void updateScreen()
       lcd.print("                ");
     }
   }
-  // Display mode 's' is not yet implemented
+  // If in display mode 's',
   if (displayMode == 's')
   {
-    lcd.setCursor(0, 0);
-    lcd.print("[TEST] Settings");
-    lcd.print("                ");
-    lcd.setCursor(0, 1);
-    lcd.print("                ");
+    // In position -1, show backlight toggle option
+    if (displayIndex == -1)
+    {
+      lcd.setCursor(0, 0);
+      lcd.print("Backlight Toggle");
+      lcd.print("                ");
+      lcd.setCursor(0, 1);
+      // If the button has been held for more than 0.5 s, prompt to release
+      if (button_L_Time >= 50 && button_R_Time >= 50)
+      {
+        lcd.print("Release");
+      }
+      // If the button is being held, prompt to keep holding
+      else if (button_L_Time >= 1 && button_R_Time >= 1)
+      {
+        lcd.print("Continue Holding");
+      }
+      // If the button is not being held, print instruction to hold it
+      else
+      {
+        lcd.print("Hold L and R");
+      }      
+      lcd.print("                ");
+    }
+    // In position 0, show "Settings" title
+    else if (displayIndex == 0)
+    {
+      lcd.setCursor(0, 0);
+      lcd.print("Settings");
+      lcd.print("                ");
+      lcd.setCursor(0, 1);
+      lcd.print("                ");
+    }
   }
   return;
 }
