@@ -37,6 +37,7 @@ int LED_2_Enabled;
 int button_L_Pressed;
 int button_R_Pressed;
 int LCD_Backlight_Enabled;
+int sound_Enabled = 0;
 
 int button_L_Time = 0;
 int button_R_Time = 0;
@@ -155,6 +156,7 @@ void loop() {
     if ((button_L_Time == 0 || button_R_Time == 0) && button_L_Time_Previous >= 300
         && button_R_Time_Previous >= 300)
     {
+      beep();
       // If the display position is -3, write to EEPROM,
       if (displayIndex == -3)
       {
@@ -184,6 +186,7 @@ void loop() {
     else if ((button_L_Time == 0 || button_R_Time == 0) && button_L_Time_Previous >= 50
              && button_R_Time_Previous >= 50)
     {
+      beep();
       // If the display position is -1, read from SRAM
       if (displayIndex == -1)
       {
@@ -205,6 +208,7 @@ void loop() {
     // If the right (but not left) button is held for 1 second, exit to display mode 'l'
     else if (button_R_Time >= 100 && button_L_Time == 0)
     {
+      beep();
       displayMode = 'l';
     }
     // If the left button was pressed briefly, decrease display index if greater than -3
@@ -221,15 +225,33 @@ void loop() {
   {
     // If both buttons have been released after at least 0.5 seconds,
     if ((button_L_Time == 0 || button_R_Time == 0) && button_L_Time_Previous >= 50
-             && button_R_Time_Previous >= 50)
+        && button_R_Time_Previous >= 50)
     {
+      beep();
+      // If the display position is -2, toggle sound
+      if (displayIndex == -2)
+      {
+
+        Serial.print("Time: ");
+        Serial.print(millis() / 1000.0);
+        if (sound_Enabled == 0)
+        {
+          sound_Enabled = 1;
+          Serial.println(" | Enabling Sound");
+        }
+        else
+        {
+          sound_Enabled = 0;
+          Serial.println(" | Disabling Sound");
+        }
+      }
       // If the display position is -1, toggle backlight
       if (displayIndex == -1)
       {
-        
+
         Serial.print("Time: ");
         Serial.print(millis() / 1000.0);
-        if(LCD_Backlight_Enabled == 0)
+        if (LCD_Backlight_Enabled == 0)
         {
           LCD_Backlight_Enabled = 1;
           Serial.println(" | Enabling Backlight");
@@ -237,7 +259,7 @@ void loop() {
         else
         {
           LCD_Backlight_Enabled = 0;
-          Serial.println(" | Disabling Backlight");          
+          Serial.println(" | Disabling Backlight");
         }
       }
     }
@@ -249,10 +271,10 @@ void loop() {
         displayIndex++;
       }
     }
-    // If the left button was pressed briefly, decrease display index if greater than -1
+    // If the left button was pressed briefly, decrease display index if greater than -2
     else if (button_L_Time == 0 && button_L_Time_Previous >= 1 && button_L_Time_Previous <= 50)
     {
-      if (displayIndex > -1)
+      if (displayIndex > -2)
       {
         displayIndex--;
       }
@@ -260,6 +282,7 @@ void loop() {
     // If the left (but not right) button is held for 1 second, exit to display mode 'l'
     else if (button_L_Time >= 100 && button_R_Time == 0)
     {
+      beep();
       displayMode = 'l';
     }
   }
@@ -324,6 +347,12 @@ void loop() {
     {
       LED_2_Enabled = 0;
     }
+  }
+  
+  // Beep on button press
+  if (button_L_Time == 1 || button_R_Time == 1)
+  {
+    beep();
   }
 
   // Every 5 cycles, update the screen
@@ -551,6 +580,30 @@ void updateScreen()
       lcd.print("Continue Holding");
       lcd.print("                ");
     }
+    // In position -2, show sound toggle option
+    else if (displayIndex == -2)
+    {
+      lcd.setCursor(0, 0);
+      lcd.print("Sound Toggle");
+      lcd.print("                ");
+      lcd.setCursor(0, 1);
+      // If the button has been held for more than 0.5 s, prompt to release
+      if (button_L_Time >= 50 && button_R_Time >= 50)
+      {
+        lcd.print("Release");
+      }
+      // If the button is being held, prompt to keep holding
+      else if (button_L_Time >= 1 && button_R_Time >= 1)
+      {
+        lcd.print("Continue Holding");
+      }
+      // If the button is not being held, print instruction to hold it
+      else
+      {
+        lcd.print("Hold L and R");
+      }
+      lcd.print("                ");
+    }
     // In position -1, show backlight toggle option
     else if (displayIndex == -1)
     {
@@ -572,7 +625,7 @@ void updateScreen()
       else
       {
         lcd.print("Hold L and R");
-      }      
+      }
       lcd.print("                ");
     }
     // In position 0, show "Settings" title
@@ -725,3 +778,13 @@ float median(float input[], int n)
     return x[n / 2];
   }
 }
+
+// If sound is enabled, play a beep
+void beep()
+{
+  if (sound_Enabled == 1)
+  {
+    tone(pin_Piezo, 3500, 50);
+  }
+}
+
