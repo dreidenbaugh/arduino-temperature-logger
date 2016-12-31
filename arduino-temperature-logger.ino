@@ -5,7 +5,7 @@
 #include <math.h>
 #include <EEPROM.h>
 
-int samplingPeriod = 240; // Sampling frequency in seconds
+int samplingPeriod = 240; // Sampling period in seconds
 
 // Pin numbers:
 const int pin_TempSensor = A0; // Pin for temperature sensor
@@ -44,7 +44,7 @@ int button_R_Time = 0;
 int button_L_Time_Previous;
 int button_R_Time_Previous;
 
-int loops_Since_Action = 0;
+byte loops_Since_Action = 0;
 
 float tempSensorValue;
 float vcc; // Arduino voltage supply in mV
@@ -55,7 +55,7 @@ const int recentTemperaturesLength = 30;
 float recentTemperatures[recentTemperaturesLength] = { NULL };
 float recentTemperaturesMedian;
 
-const byte recordedTemperaturesLength = 500;
+const int recordedTemperaturesLength = 501;
 byte recordedTemperatures[recordedTemperaturesLength] = { NULL };
 int currentRecordIndex = 0;
 
@@ -110,7 +110,10 @@ void loop() {
   }
   minutesElapsed = secondsElapsed / 60;
   hoursElapsed = minutesElapsed / 60;
-  loops_Since_Action++;
+  if (loops_Since_Action < 255) // 255 is maximum value for byte
+  {
+    loops_Since_Action++;
+  }
 
   // Update button hold time variables
   button_L_Pressed = digitalRead(pin_Button_L);
@@ -203,13 +206,10 @@ void loop() {
     // If the right button was pressed briefly, increase display index
     else if (button_R_Time == 0 && button_R_Time_Previous >= 1 && button_R_Time_Previous <= 50)
     {
-      displayIndex++;
-    }
-    // If the right (but not left) button is held for 1 second, exit to display mode 'l'
-    else if (button_R_Time >= 100 && button_L_Time == 0)
-    {
-      beep();
-      displayMode = 'l';
+      if (displayIndex < recordedTemperaturesLength - 1)
+      {
+        displayIndex++;
+      }
     }
     // If the left button was pressed briefly, decrease display index if greater than -3
     else if (button_L_Time == 0 && button_L_Time_Previous >= 1 && button_L_Time_Previous <= 50)
@@ -218,6 +218,12 @@ void loop() {
       {
         displayIndex--;
       }
+    }
+    // If the right (but not left) button is held for 1 second, exit to display mode 'l'
+    else if (button_R_Time >= 100 && button_L_Time == 0)
+    {
+      beep();
+      displayMode = 'l';
     }
   }
   // If in display mode 's',
@@ -356,7 +362,7 @@ void loop() {
       LED_2_Enabled = 0;
     }
   }
-  
+
   // Beep on button press
   if (button_L_Time == 1 || button_R_Time == 1)
   {
@@ -706,7 +712,8 @@ void updateDigitalOutputs()
 }
 
 // Update the Vcc (power supply voltage) for proper thermometer calibration
-void updateVcc() {
+void updateVcc()
+{
   // from http://provideyourown.com/2012/secret-arduino-voltmeter-measure-battery-voltage/
   // Read 1.1V reference against AVcc
   // set the reference to Vcc and the measurement to the internal 1.1V reference
@@ -819,4 +826,3 @@ void beep()
     tone(pin_Piezo, 3500, 50);
   }
 }
-
