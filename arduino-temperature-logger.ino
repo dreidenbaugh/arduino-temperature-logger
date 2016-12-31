@@ -32,17 +32,17 @@ boolean firstLoopOfSecond;
 long minutesElapsed = - 1;
 int hoursElapsed = -1;
 
-int LED_1_Enabled;
-int LED_2_Enabled;
-int button_L_Pressed;
-int button_R_Pressed;
-int LCD_Backlight_Enabled;
-int sound_Enabled = 0;
+boolean LED_1_Enabled;
+boolean LED_2_Enabled;
+boolean button_L_Pressed;
+boolean button_R_Pressed;
+boolean LCD_Backlight_Enabled;
+boolean sound_Enabled = false;
 
-int button_L_Time = 0;
-int button_R_Time = 0;
-int button_L_Time_Previous;
-int button_R_Time_Previous;
+unsigned int button_L_Time = 0;
+unsigned int button_R_Time = 0;
+unsigned int button_L_Time_Previous;
+unsigned int button_R_Time_Previous;
 
 byte loops_Since_Action = 0;
 
@@ -673,6 +673,8 @@ void updateScreen()
       lcd.print("Settings");
       lcd.print("                ");
       lcd.setCursor(0, 1);
+      lcd.print("Free SRAM: ");
+      lcd.print(freeRam());
       lcd.print("                ");
     }
   }
@@ -756,9 +758,17 @@ void readFromSRAM()
 // Print to the serial port each record under 200 in the EEPROM
 void readFromEEPROM()
 {
+  byte value;
   for (int i = 1; i <= recordedTemperaturesLength; i++)
   {
-    byte value = EEPROM.read(i);
+    if(i <= E2END) // E2END is the maximum EEPROM address
+    {
+      value = EEPROM.read(i);
+    }
+    else
+    {
+      break;
+    }
     if (value < 200)
     {
       Serial.print(i);
@@ -778,7 +788,14 @@ void writeToEEPROM()
   int i;
   for (i = 1; i <= currentRecordIndex; i++)
   {
-    EEPROM.write(i, recordedTemperatures[i]);
+    if (i < E2END) // E2END is the maximum EEPROM address
+    {
+      EEPROM.write(i, recordedTemperatures[i]);
+    }
+    else
+    {
+      break;
+    }
   }
   EEPROM.write(i, 255); // 255 indicates end of actual data
 }
@@ -826,3 +843,13 @@ void beep()
     tone(pin_Piezo, 3500, 50);
   }
 }
+
+// Return the available memory between the heap and the stack
+int freeRam()
+{
+  // from https://learn.adafruit.com/memories-of-an-arduino/measuring-free-memory
+  extern int __heap_start, *__brkval;
+  int v;
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+}
+
