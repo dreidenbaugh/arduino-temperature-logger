@@ -228,6 +228,14 @@ void loop() {
         && button_R_Time_Previous >= 50)
     {
       beep();
+      // If the display position is -3, reset LCD
+      if (displayIndex == -3)
+      {
+        lcd.begin(16, 2);
+        Serial.print("Time: ");
+        Serial.print(millis() / 1000.0);
+        Serial.println(" | LCD Reset");
+      }
       // If the display position is -2, toggle sound
       if (displayIndex == -2)
       {
@@ -271,10 +279,10 @@ void loop() {
         displayIndex++;
       }
     }
-    // If the left button was pressed briefly, decrease display index if greater than -2
+    // If the left button was pressed briefly, decrease display index if greater than -3
     else if (button_L_Time == 0 && button_L_Time_Previous >= 1 && button_L_Time_Previous <= 50)
     {
-      if (displayIndex > -2)
+      if (displayIndex > -3)
       {
         displayIndex--;
       }
@@ -578,6 +586,30 @@ void updateScreen()
       lcd.print("                ");
       lcd.setCursor(0, 1);
       lcd.print("Continue Holding");
+      lcd.print("                ");
+    }
+    // In position -3, show LCD reset option
+    else if (displayIndex == -3)
+    {
+      lcd.setCursor(0, 0);
+      lcd.print("LCD Reset");
+      lcd.print("                ");
+      lcd.setCursor(0, 1);
+      // If the button has been held for more than 0.5 s, prompt to release
+      if (button_L_Time >= 50 && button_R_Time >= 50)
+      {
+        lcd.print("Release");
+      }
+      // If the button is being held, prompt to keep holding
+      else if (button_L_Time >= 1 && button_R_Time >= 1)
+      {
+        lcd.print("Continue Holding");
+      }
+      // If the button is not being held, print instruction to hold it
+      else
+      {
+        lcd.print("Hold L and R");
+      }
       lcd.print("                ");
     }
     // In position -2, show sound toggle option
