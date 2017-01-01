@@ -225,6 +225,19 @@ void loop() {
       beep();
       displayMode = 'l';
     }
+    // If the left (but not right) button is held for 1 second, jump to last data entry
+    else if (button_L_Time >= 100 && button_R_Time == 0)
+    {
+      beep();
+      if (currentRecordIndex < recordedTemperaturesLength)
+      {
+        displayIndex = currentRecordIndex;
+      }
+      else
+      {
+        displayIndex = recordedTemperaturesLength - 1;
+      }
+    }
   }
   // If in display mode 's',
   else if (displayMode == 's')
@@ -458,6 +471,25 @@ void updateScreen()
       lcd.print("Continue Holding");
       lcd.print("                ");
     }
+    // If the left button is being held, prompt to keep holding
+    else if (button_L_Time >= 20 && button_R_Time == 0)
+    {
+      lcd.setCursor(0, 0);
+      lcd.print("Jump to Last");
+      lcd.print("                ");
+      lcd.setCursor(0, 1);
+      // If the button has been held for more than 1 s, prompt to release
+      if (button_L_Time >= 100)
+      {
+        lcd.print("Release");
+      }
+      // Otherwise, prompt to keep holding
+      else
+      {
+        lcd.print("Continue Holding");
+      }
+      lcd.print("                ");
+    }
     // In position -3, show Write to EEPROM option
     else if (displayIndex == -3)
     {
@@ -465,12 +497,12 @@ void updateScreen()
       lcd.print("Write to EEPROM");
       lcd.print("                ");
       lcd.setCursor(0, 1);
-      // If the button has been held for more than 3 s, prompt to release
+      // If the buttons have been held for more than 3 s, prompt to release
       if (button_L_Time >= 300 && button_R_Time >= 300)
       {
         lcd.print("Release");
       }
-      // If the button is being held, prompt to keep holding
+      // If the buttons are being held, prompt to keep holding
       else if (button_L_Time >= 1 && button_R_Time >= 1)
       {
         lcd.print("Continue Holding");
@@ -480,7 +512,7 @@ void updateScreen()
       {
         lcd.print("Write Complete");
       }
-      // If the button is not being held, print instruction to hold it
+      // If the buttons are not being held, print instruction to hold it
       else
       {
         lcd.print("Hold L and R");
@@ -497,12 +529,12 @@ void updateScreen()
       // If there is a Serial connection,
       if (Serial)
       {
-        // If the button has been held for more than 3 s, prompt to release
+        // If the buttons have been held for more than 3 s, prompt to release
         if (button_L_Time >= 300 && button_R_Time >= 300)
         {
           lcd.print("Release");
         }
-        // If the button is being held, prompt to keep holding
+        // If the buttons are being held, prompt to keep holding
         else if (button_L_Time >= 1 && button_R_Time >= 1)
         {
           lcd.print("Continue Holding");
@@ -512,7 +544,7 @@ void updateScreen()
         {
           lcd.print("Read Complete");
         }
-        // If the button is not being held, print instruction to hold it
+        // If the buttons are not being held, print instruction to hold it
         else
         {
           lcd.print("Hold L and R");
@@ -534,12 +566,12 @@ void updateScreen()
       // If there is a Serial connection,
       if (Serial)
       {
-        // If the button has been held for more than 0.5 s, prompt to release
+        // If the buttons have been held for more than 0.5 s, prompt to release
         if (button_L_Time >= 50 && button_R_Time >= 50)
         {
           lcd.print("Release");
         }
-        // If the button is being held, prompt to keep holding
+        // If the buttons are being held, prompt to keep holding
         else if (button_L_Time >= 1 && button_R_Time >= 1)
         {
           lcd.print("Continue Holding");
@@ -549,7 +581,7 @@ void updateScreen()
         {
           lcd.print("Read Complete");
         }
-        // If the button is not being held, print instruction to hold it
+        // If the buttons are not being held, print instruction to hold it
         else
         {
           lcd.print("Hold L and R");
@@ -614,17 +646,17 @@ void updateScreen()
       lcd.print("LCD Reset");
       lcd.print("                ");
       lcd.setCursor(0, 1);
-      // If the button has been held for more than 0.5 s, prompt to release
+      // If the buttons have been held for more than 0.5 s, prompt to release
       if (button_L_Time >= 50 && button_R_Time >= 50)
       {
         lcd.print("Release");
       }
-      // If the button is being held, prompt to keep holding
+      // If the buttons are being held, prompt to keep holding
       else if (button_L_Time >= 1 && button_R_Time >= 1)
       {
         lcd.print("Continue Holding");
       }
-      // If the button is not being held, print instruction to hold it
+      // If the buttons are not being held, print instruction to hold it
       else
       {
         lcd.print("Hold L and R");
@@ -638,17 +670,17 @@ void updateScreen()
       lcd.print("Sound Toggle");
       lcd.print("                ");
       lcd.setCursor(0, 1);
-      // If the button has been held for more than 0.5 s, prompt to release
+      // If the buttons have been held for more than 0.5 s, prompt to release
       if (button_L_Time >= 50 && button_R_Time >= 50)
       {
         lcd.print("Release");
       }
-      // If the button is being held, prompt to keep holding
+      // If the buttons are being held, prompt to keep holding
       else if (button_L_Time >= 1 && button_R_Time >= 1)
       {
         lcd.print("Continue Holding");
       }
-      // If the button is not being held, print instruction to hold it
+      // If the buttons are not being held, print instruction to hold it
       else
       {
         lcd.print("Hold L and R");
@@ -662,17 +694,17 @@ void updateScreen()
       lcd.print("Backlight Toggle");
       lcd.print("                ");
       lcd.setCursor(0, 1);
-      // If the button has been held for more than 0.5 s, prompt to release
+      // If the buttons have been held for more than 0.5 s, prompt to release
       if (button_L_Time >= 50 && button_R_Time >= 50)
       {
         lcd.print("Release");
       }
-      // If the button is being held, prompt to keep holding
+      // If the buttons are being held, prompt to keep holding
       else if (button_L_Time >= 1 && button_R_Time >= 1)
       {
         lcd.print("Continue Holding");
       }
-      // If the button is not being held, print instruction to hold it
+      // If the buttons are not being held, print instruction to hold it
       else
       {
         lcd.print("Hold L and R");
