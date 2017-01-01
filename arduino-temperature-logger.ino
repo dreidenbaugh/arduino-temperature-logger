@@ -55,7 +55,7 @@ const int recentTemperaturesLength = 30;
 float recentTemperatures[recentTemperaturesLength] = { NULL };
 float recentTemperaturesMedian;
 
-const int recordedTemperaturesLength = 501;
+const int recordedTemperaturesLength = 500;
 byte recordedTemperatures[recordedTemperaturesLength] = { NULL };
 int currentRecordIndex = 0;
 
@@ -203,10 +203,10 @@ void loop() {
         loops_Since_Action = 0;
       }
     }
-    // If the right button was pressed briefly, increase display index
+    // If the right button was pressed briefly, increase display index if under history length
     else if (button_R_Time == 0 && button_R_Time_Previous >= 1 && button_R_Time_Previous <= 50)
     {
-      if (displayIndex < recordedTemperaturesLength - 1)
+      if (displayIndex < recordedTemperaturesLength)
       {
         displayIndex++;
       }
@@ -345,21 +345,34 @@ void loop() {
     if (secondsElapsed % samplingPeriod == 0 && firstLoopOfSecond == 1)
     {
       LED_2_Enabled = 1;
-      currentRecordIndex++;
-      recordedTemperatures[currentRecordIndex] = round(recentTemperaturesMedian);
       Serial.print("Time: ");
       Serial.print(millis() / 1000.0);
       Serial.print(" | ");
       Serial.print("Sample ");
       Serial.print(currentRecordIndex);
-      Serial.print(": ");
-      Serial.println(recordedTemperatures[currentRecordIndex]);
+      // If the record array is not full,
+      if (currentRecordIndex < recordedTemperaturesLength)
+      {
+        recordedTemperatures[currentRecordIndex] = round(recentTemperaturesMedian);
+        Serial.print(": ");
+        Serial.println(recordedTemperatures[currentRecordIndex]);
+      }
+      // If the record array is full,
+      else
+      {
+        Serial.println(" Not Saved; Memory Full");
+      }
+      currentRecordIndex++;
     }
 
     // Every (samplingPeriod) seconds, delayed by 1 second, turn off LED 2
     if ((secondsElapsed - 1) % (samplingPeriod) == 0 && firstLoopOfSecond == 1)
     {
-      LED_2_Enabled = 0;
+      // If the record array is not full,
+      if (currentRecordIndex < recordedTemperaturesLength)
+      {
+        LED_2_Enabled = 0;
+      }
     }
   }
 
@@ -564,13 +577,13 @@ void updateScreen()
     {
       lcd.setCursor(0, 0);
       lcd.print("Sample: ");
-      lcd.print(displayIndex);
+      lcd.print(displayIndex - 1);
       lcd.print("                ");
       lcd.setCursor(0, 1);
-      if (recordedTemperatures[displayIndex])
+      if (recordedTemperatures[displayIndex - 1])
       {
         lcd.print("Temp: ");
-        lcd.print(recordedTemperatures[displayIndex]);
+        lcd.print(recordedTemperatures[displayIndex - 1]);
         lcd.print((char)223);
         lcd.print("F");
       }
@@ -747,11 +760,18 @@ void updateVcc()
 // Print to the serial port each record in the SRAM
 void readFromSRAM()
 {
-  for (int i = 1; i <= currentRecordIndex; i++)
+  for (int i = 0; i < currentRecordIndex; i++)
   {
-    Serial.print(i);
-    Serial.print(",");
-    Serial.println(recordedTemperatures[i]);
+    if (i < recordedTemperaturesLength)
+    {
+      Serial.print(i);
+      Serial.print(",");
+      Serial.println(recordedTemperatures[i]);
+    }
+    else
+    {
+      break;
+    }
   }
 }
 
@@ -759,16 +779,10 @@ void readFromSRAM()
 void readFromEEPROM()
 {
   byte value;
-  for (int i = 1; i <= recordedTemperaturesLength; i++)
+  int i = 0;
+  while (i <= E2END)
   {
-    if(i <= E2END) // E2END is the maximum EEPROM address
-    {
-      value = EEPROM.read(i);
-    }
-    else
-    {
-      break;
-    }
+    value = EEPROM.read(i);
     if (value < 200)
     {
       Serial.print(i);
@@ -779,6 +793,7 @@ void readFromEEPROM()
     {
       break;
     }
+    i++;
   }
 }
 
@@ -786,9 +801,9 @@ void readFromEEPROM()
 void writeToEEPROM()
 {
   int i;
-  for (i = 1; i <= currentRecordIndex; i++)
+  for (i = 0; i < currentRecordIndex; i++)
   {
-    if (i < E2END) // E2END is the maximum EEPROM address
+    if (i < E2END && i < recordedTemperaturesLength) // E2END is the maximum EEPROM address
     {
       EEPROM.write(i, recordedTemperatures[i]);
     }
