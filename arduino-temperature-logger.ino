@@ -225,8 +225,8 @@ void loop() {
       beep();
       displayMode = 'l';
     }
-    // If the left (but not right) button is held for 1 second, jump to last data entry
-    else if (button_L_Time >= 100 && button_R_Time == 0)
+    // If the left (but not right) button was held for 1 second, jump to last data entry
+    else if (button_L_Time_Previous >= 100 && button_R_Time_Previous == 0 && button_L_Time == 0)
     {
       beep();
       if (currentRecordIndex < recordedTemperaturesLength)
@@ -887,7 +887,7 @@ void beep()
 {
   if (sound_Enabled == 1)
   {
-    tone(pin_Piezo, 3500, 50);
+    tone(pin_Piezo, 3000, 50);
   }
 }
 
