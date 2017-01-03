@@ -4,7 +4,7 @@ median of recent samples at a defined frequency, takes user input from
 two  buttons, and outputs to a 16-by-2 liquid crystal display (LCD), 
 the serial monitor, two LEDs, and a piezo buzzer.
 
-![Project Photo](./project_photo.jpg)
+![Project Photo](./project-photo.jpg)
 
 ## Temperature Measuring and Recording
 The temperature is measured approximately once per second by a TMP36 
@@ -68,9 +68,8 @@ between the screens of the menu.
 The main screen shows the menu title and the sampling period in seconds.
 
 Moving to the right of the main screen shows the values stored in the 
-history array. "No Data" is shown for samples that have not yet been 
-recorded. Pressing and holding the left button for approximately one 
-second will jump to the last recorded sample in the array.
+history array. Pressing and holding the left button for approximately 
+one second will jump to the last recorded sample in the array.
 
 To the left of the main screen are read/write actions which can be 
 activated by pressing and holding the left and right buttons.
@@ -82,8 +81,7 @@ sample stored in the history array.
 When the Arduino loses power or resets, all data in the SRAM is lost. 
 Fortunately, the Arduino also has electrically erasable programmable 
 read-only memory (EEPROM), in which data stored is not lost on resets. 
-Because the EEPROM has a limited number of read/write 
-s, it would 
+Because the EEPROM has a limited number of read/writes, it would 
 not be practical to record every sample in the EEPROM. However, for 
 cases where it is necessary to reset the Arduino after recording 
 samples but before transferring the data to the serial monitor (e.g., 
