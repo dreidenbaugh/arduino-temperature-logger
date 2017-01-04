@@ -69,12 +69,12 @@ void setup() {
   Serial.begin(9600);
 
   // Print the sampling period to the serial port
-  Serial.print("Time: ");
+  Serial.print(F("Time: "));
   Serial.print(millis() / 1000.0);
-  Serial.print(" | ");
-  Serial.print("Sampling Period: ");
+  Serial.print(F(" | "));
+  Serial.print(F("Sampling Period: "));
   Serial.print(sampling_period);
-  Serial.println(" seconds");
+  Serial.println(F(" seconds"));
 
   // Set up the pin modes
   pinMode(pin_led_1, OUTPUT);
@@ -95,7 +95,7 @@ void setup() {
   // Print "Initializing..." to the LCD
   lcd.begin(16, 2);
   lcd.setCursor(0, 0);
-  lcd.print("Initializing...");
+  lcd.print(F("Initializing..."));
 }
 
 void loop() {
@@ -166,25 +166,25 @@ void loop() {
       // If the display position is -3, write to EEPROM,
       if (display_index == -3)
       {
-        Serial.print("Time: ");
+        Serial.print(F("Time: "));
         Serial.print(millis() / 1000.0);
-        Serial.println(" | Starting Write to EEPROM");
+        Serial.println(F(" | Starting Write to EEPROM"));
         writeToEEPROM();
-        Serial.print("Time: ");
+        Serial.print(F("Time: "));
         Serial.print(millis() / 1000.0);
-        Serial.println(" | Ending Write to EPROM");
+        Serial.println(F(" | Ending Write to EPROM"));
         loops_since_action = 0;
       }
       // If the display position is -2, read from EEPROM,
       else if (display_index == -2)
       {
-        Serial.print("Time: ");
+        Serial.print(F("Time: "));
         Serial.print(millis() / 1000.0);
-        Serial.println(" | Starting Read from EEPROM");
+        Serial.println(F(" | Starting Read from EEPROM"));
         readFromEEPROM();
-        Serial.print("Time: ");
+        Serial.print(F("Time: "));
         Serial.print(millis() / 1000.0);
-        Serial.println(" | Ending Read from EEPROM");
+        Serial.println(F(" | Ending Read from EEPROM"));
         loops_since_action = 0;
       }
     }
@@ -196,13 +196,13 @@ void loop() {
       // If the display position is -1, read from SRAM
       if (display_index == -1)
       {
-        Serial.print("Time: ");
+        Serial.print(F("Time: "));
         Serial.print(millis() / 1000.0);
-        Serial.println(" | Starting Read from SRAM");
+        Serial.println(F(" | Starting Read from SRAM"));
         readFromSRAM();
-        Serial.print("Time: ");
+        Serial.print(F("Time: "));
         Serial.print(millis() / 1000.0);
-        Serial.println(" | Ending Read from SRAM");
+        Serial.println(F(" | Ending Read from SRAM"));
         loops_since_action = 0;
       }
     }
@@ -254,42 +254,42 @@ void loop() {
       if (display_index == -3)
       {
         lcd.begin(16, 2);
-        Serial.print("Time: ");
+        Serial.print(F("Time: "));
         Serial.print(millis() / 1000.0);
-        Serial.println(" | LCD Reset");
+        Serial.println(F(" | LCD Reset"));
       }
       // If the display position is -2, toggle sound
       if (display_index == -2)
       {
 
-        Serial.print("Time: ");
+        Serial.print(F("Time: "));
         Serial.print(millis() / 1000.0);
         if (sound_enabled == 0)
         {
           sound_enabled = 1;
-          Serial.println(" | Enabling Sound");
+          Serial.println(F(" | Enabling Sound"));
         }
         else
         {
           sound_enabled = 0;
-          Serial.println(" | Disabling Sound");
+          Serial.println(F(" | Disabling Sound"));
         }
       }
       // If the display position is -1, toggle backlight
       if (display_index == -1)
       {
 
-        Serial.print("Time: ");
+        Serial.print(F("Time: "));
         Serial.print(millis() / 1000.0);
         if (lcd_backlight_enabled == 0)
         {
           lcd_backlight_enabled = 1;
-          Serial.println(" | Enabling Backlight");
+          Serial.println(F(" | Enabling Backlight"));
         }
         else
         {
           lcd_backlight_enabled = 0;
-          Serial.println(" | Disabling Backlight");
+          Serial.println(F(" | Disabling Backlight"));
         }
       }
     }
@@ -325,23 +325,23 @@ void loop() {
   if (seconds_elapsed % 30 == 0 && is_first_loop_of_second == 1)
   {
     updateSupplyVoltage();
-    Serial.print("Time: ");
+    Serial.print(F("Time: "));
     Serial.print(millis() / 1000.0);
-    Serial.print(" | ");
-    Serial.print("Arduino Power Supply: ");
+    Serial.print(F(" | "));
+    Serial.print(F("Arduino Power Supply: "));
     Serial.print(supply_voltage);
-    Serial.println(" mV");
+    Serial.println(F(" mV"));
   }
 
   // Every 75 cycles, read, update, and print the temperature, and turn on LED 1
   if (loop_number % 75 == 0)
   {
-    Serial.print("Time: ");
+    Serial.print(F("Time: "));
     Serial.print(millis() / 1000.0);
-    Serial.print(" | ");
-    Serial.print("Current Temperature: ");
+    Serial.print(F(" | "));
+    Serial.print(F("Current Temperature: "));
     Serial.print(updateTemperature());
-    Serial.print(" | Median Temperature: ");
+    Serial.print(F(" | Median Temperature: "));
     Serial.println(recent_temperatures_median);
     led_1_enabled = 1;
   }
@@ -359,22 +359,22 @@ void loop() {
     if (seconds_elapsed % sampling_period == 0 && is_first_loop_of_second == 1)
     {
       led_2_enabled = 1;
-      Serial.print("Time: ");
+      Serial.print(F("Time: "));
       Serial.print(millis() / 1000.0);
-      Serial.print(" | ");
-      Serial.print("Sample ");
+      Serial.print(F(" | "));
+      Serial.print(F("Sample "));
       Serial.print(current_record_index);
       // If the record array is not full,
       if (current_record_index < recorded_temperatures_length)
       {
         recorded_temperatures[current_record_index] = round(recent_temperatures_median);
-        Serial.print(": ");
+        Serial.print(F(": "));
         Serial.println(recorded_temperatures[current_record_index]);
       }
       // If the record array is full,
       else
       {
-        Serial.println(" Not Saved; Memory Full");
+        Serial.println(F(" Not Saved; Memory Full"));
       }
       current_record_index++;
     }
@@ -441,24 +441,24 @@ void updateScreen()
   {
     lcd.setCursor(0, 0);
     lcd.print(hours_elapsed);
-    lcd.print(":");
+    lcd.print(F(":"));
     if ((minutes_elapsed % 60) < 10)
     {
-      lcd.print("0");
+      lcd.print(F("0"));
     }
     lcd.print(minutes_elapsed % 60);
-    lcd.print(":");
+    lcd.print(F(":"));
     if ((seconds_elapsed % 60) < 10)
     {
-      lcd.print("0");
+      lcd.print(F("0"));
     }
     lcd.print(seconds_elapsed % 60);
-    lcd.print("                ");
+    lcd.print(F("                "));
     lcd.setCursor(0, 1);
     lcd.print(round(recent_temperatures_median));
     lcd.print((char)223);
-    lcd.print("F");
-    lcd.print("                ");
+    lcd.print(F("F"));
+    lcd.print(F("                "));
   }
 
   // If in display mode 'd',
@@ -468,66 +468,66 @@ void updateScreen()
     if (button_right_time >= 20 && button_left_time == 0)
     {
       lcd.setCursor(0, 0);
-      lcd.print("Exit Data Mode");
-      lcd.print("                ");
+      lcd.print(F("Exit Data Mode"));
+      lcd.print(F("                "));
       lcd.setCursor(0, 1);
-      lcd.print("Continue Holding");
-      lcd.print("                ");
+      lcd.print(F("Continue Holding"));
+      lcd.print(F("                "));
     }
     // If the left button is being held, prompt to keep holding
     else if (button_left_time >= 20 && button_right_time == 0)
     {
       lcd.setCursor(0, 0);
-      lcd.print("Jump to Last");
-      lcd.print("                ");
+      lcd.print(F("Jump to Last"));
+      lcd.print(F("                "));
       lcd.setCursor(0, 1);
       // If the button has been held for more than 1 s, prompt to release
       if (button_left_time >= 100)
       {
-        lcd.print("Release");
+        lcd.print(F("Release"));
       }
       // Otherwise, prompt to keep holding
       else
       {
-        lcd.print("Continue Holding");
+        lcd.print(F("Continue Holding"));
       }
-      lcd.print("                ");
+      lcd.print(F("                "));
     }
     // In position -3, show Write to EEPROM option
     else if (display_index == -3)
     {
       lcd.setCursor(0, 0);
-      lcd.print("Write to EEPROM");
-      lcd.print("                ");
+      lcd.print(F("Write to EEPROM"));
+      lcd.print(F("                "));
       lcd.setCursor(0, 1);
       // If the buttons have been held for more than 3 s, prompt to release
       if (button_left_time >= 300 && button_right_time >= 300)
       {
-        lcd.print("Release");
+        lcd.print(F("Release"));
       }
       // If the buttons are being held, prompt to keep holding
       else if (button_left_time >= 1 && button_right_time >= 1)
       {
-        lcd.print("Continue Holding");
+        lcd.print(F("Continue Holding"));
       }
       // If the action just completed, show confirmation
       else if (loops_since_action < 100)
       {
-        lcd.print("Write Complete");
+        lcd.print(F("Write Complete"));
       }
       // If the buttons are not being held, print instruction to hold it
       else
       {
-        lcd.print("Hold L and R");
+        lcd.print(F("Hold L and R"));
       }
-      lcd.print("                ");
+      lcd.print(F("                "));
     }
     // In position -2, show Read from EEPROM option
     else if (display_index == -2)
     {
       lcd.setCursor(0, 0);
-      lcd.print("Read from EEPROM");
-      lcd.print("                ");
+      lcd.print(F("Read from EEPROM"));
+      lcd.print(F("                "));
       lcd.setCursor(0, 1);
       // If there is a Serial connection,
       if (Serial)
@@ -535,36 +535,36 @@ void updateScreen()
         // If the buttons have been held for more than 3 s, prompt to release
         if (button_left_time >= 300 && button_right_time >= 300)
         {
-          lcd.print("Release");
+          lcd.print(F("Release"));
         }
         // If the buttons are being held, prompt to keep holding
         else if (button_left_time >= 1 && button_right_time >= 1)
         {
-          lcd.print("Continue Holding");
+          lcd.print(F("Continue Holding"));
         }
         // If the action just completed, show confirmation
         else if (loops_since_action < 100)
         {
-          lcd.print("Read Complete");
+          lcd.print(F("Read Complete"));
         }
         // If the buttons are not being held, print instruction to hold it
         else
         {
-          lcd.print("Hold L and R");
+          lcd.print(F("Hold L and R"));
         }
       }
       else
       {
-        lcd.print("No Connection");
+        lcd.print(F("No Connection"));
       }
-      lcd.print("                ");
+      lcd.print(F("                "));
     }
     // In position -1, show Read from SRAM option
     else if (display_index == -1)
     {
       lcd.setCursor(0, 0);
-      lcd.print("Read from SRAM");
-      lcd.print("                ");
+      lcd.print(F("Read from SRAM"));
+      lcd.print(F("                "));
       lcd.setCursor(0, 1);
       // If there is a Serial connection,
       if (Serial)
@@ -572,61 +572,61 @@ void updateScreen()
         // If the buttons have been held for more than 0.5 s, prompt to release
         if (button_left_time >= 50 && button_right_time >= 50)
         {
-          lcd.print("Release");
+          lcd.print(F("Release"));
         }
         // If the buttons are being held, prompt to keep holding
         else if (button_left_time >= 1 && button_right_time >= 1)
         {
-          lcd.print("Continue Holding");
+          lcd.print(F("Continue Holding"));
         }
         // If the action just completed, show confirmation
         else if (loops_since_action < 100)
         {
-          lcd.print("Read Complete");
+          lcd.print(F("Read Complete"));
         }
         // If the buttons are not being held, print instruction to hold it
         else
         {
-          lcd.print("Hold L and R");
+          lcd.print(F("Hold L and R"));
         }
       }
       else
       {
-        lcd.print("No Connection");
+        lcd.print(F("No Connection"));
       }
-      lcd.print("                ");
+      lcd.print(F("                "));
     }
     // In position 0, show "Data View" title and sampling period
     else if (display_index == 0)
     {
       lcd.setCursor(0, 0);
-      lcd.print("Data View");
-      lcd.print("                ");
+      lcd.print(F("Data View"));
+      lcd.print(F("                "));
       lcd.setCursor(0, 1);
-      lcd.print("Samp. Per.: ");
+      lcd.print(F("Samp. Per.: "));
       lcd.print(sampling_period);
-      lcd.print("                ");
+      lcd.print(F("                "));
     }
     // In positions greater than 0, show corresponding sample, if any
     else if (display_index > 0)
     {
       lcd.setCursor(0, 0);
-      lcd.print("Sample: ");
+      lcd.print(F("Sample: "));
       lcd.print(display_index - 1);
-      lcd.print("                ");
+      lcd.print(F("                "));
       lcd.setCursor(0, 1);
       if (recorded_temperatures[display_index - 1])
       {
-        lcd.print("Temp: ");
+        lcd.print(F("Temp: "));
         lcd.print(recorded_temperatures[display_index - 1]);
         lcd.print((char)223);
-        lcd.print("F");
+        lcd.print(F("F"));
       }
       else
       {
-        lcd.print("No Data");
+        lcd.print(F("No Data"));
       }
-      lcd.print("                ");
+      lcd.print(F("                "));
     }
   }
   // If in display mode 's',
@@ -636,94 +636,94 @@ void updateScreen()
     if (button_left_time >= 20 && button_right_time == 0)
     {
       lcd.setCursor(0, 0);
-      lcd.print("Exit Settings");
-      lcd.print("                ");
+      lcd.print(F("Exit Settings"));
+      lcd.print(F("                "));
       lcd.setCursor(0, 1);
-      lcd.print("Continue Holding");
-      lcd.print("                ");
+      lcd.print(F("Continue Holding"));
+      lcd.print(F("                "));
     }
     // In position -3, show LCD reset option
     else if (display_index == -3)
     {
       lcd.setCursor(0, 0);
-      lcd.print("LCD Reset");
-      lcd.print("                ");
+      lcd.print(F("LCD Reset"));
+      lcd.print(F("                "));
       lcd.setCursor(0, 1);
       // If the buttons have been held for more than 0.5 s, prompt to release
       if (button_left_time >= 50 && button_right_time >= 50)
       {
-        lcd.print("Release");
+        lcd.print(F("Release"));
       }
       // If the buttons are being held, prompt to keep holding
       else if (button_left_time >= 1 && button_right_time >= 1)
       {
-        lcd.print("Continue Holding");
+        lcd.print(F("Continue Holding"));
       }
       // If the buttons are not being held, print instruction to hold it
       else
       {
-        lcd.print("Hold L and R");
+        lcd.print(F("Hold L and R"));
       }
-      lcd.print("                ");
+      lcd.print(F("                "));
     }
     // In position -2, show sound toggle option
     else if (display_index == -2)
     {
       lcd.setCursor(0, 0);
-      lcd.print("Sound Toggle");
-      lcd.print("                ");
+      lcd.print(F("Sound Toggle"));
+      lcd.print(F("                "));
       lcd.setCursor(0, 1);
       // If the buttons have been held for more than 0.5 s, prompt to release
       if (button_left_time >= 50 && button_right_time >= 50)
       {
-        lcd.print("Release");
+        lcd.print(F("Release"));
       }
       // If the buttons are being held, prompt to keep holding
       else if (button_left_time >= 1 && button_right_time >= 1)
       {
-        lcd.print("Continue Holding");
+        lcd.print(F("Continue Holding"));
       }
       // If the buttons are not being held, print instruction to hold it
       else
       {
-        lcd.print("Hold L and R");
+        lcd.print(F("Hold L and R"));
       }
-      lcd.print("                ");
+      lcd.print(F("                "));
     }
     // In position -1, show backlight toggle option
     else if (display_index == -1)
     {
       lcd.setCursor(0, 0);
-      lcd.print("Backlight Toggle");
-      lcd.print("                ");
+      lcd.print(F("Backlight Toggle"));
+      lcd.print(F("                "));
       lcd.setCursor(0, 1);
       // If the buttons have been held for more than 0.5 s, prompt to release
       if (button_left_time >= 50 && button_right_time >= 50)
       {
-        lcd.print("Release");
+        lcd.print(F("Release"));
       }
       // If the buttons are being held, prompt to keep holding
       else if (button_left_time >= 1 && button_right_time >= 1)
       {
-        lcd.print("Continue Holding");
+        lcd.print(F("Continue Holding"));
       }
       // If the buttons are not being held, print instruction to hold it
       else
       {
-        lcd.print("Hold L and R");
+        lcd.print(F("Hold L and R"));
       }
-      lcd.print("                ");
+      lcd.print(F("                "));
     }
     // In position 0, show "Settings" title
     else if (display_index == 0)
     {
       lcd.setCursor(0, 0);
-      lcd.print("Settings");
-      lcd.print("                ");
+      lcd.print(F("Settings"));
+      lcd.print(F("                "));
       lcd.setCursor(0, 1);
-      lcd.print("Free SRAM: ");
+      lcd.print(F("Free SRAM: "));
       lcd.print(freeRAM());
-      lcd.print("                ");
+      lcd.print(F("                "));
     }
   }
   return;
@@ -800,7 +800,7 @@ void readFromSRAM()
     if (i < recorded_temperatures_length)
     {
       Serial.print(i);
-      Serial.print(",");
+      Serial.print(F(","));
       Serial.println(recorded_temperatures[i]);
     }
     else
@@ -821,7 +821,7 @@ void readFromEEPROM()
     if (value < 200)
     {
       Serial.print(i);
-      Serial.print(",");
+      Serial.print(F(","));
       Serial.println(value, DEC);
     }
     else
