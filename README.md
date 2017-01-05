@@ -94,3 +94,10 @@ EEPROM. **Write to EEPROM** saves the current history array to the
 EEPROM. **Read from EEPROM** prints to the serial monitor on the 
 computer, if connected, the sample number and value, separated by a 
 comma, of each sample stored in the EEPROM.
+
+The read/write actions can take up to several seconds depending on 
+how many values are involved. In order to avoid delays to other 
+program actions such as temperature measurements, the program 
+implements pseudo-parallelism by occasionally pausing long 
+read/write actions, executing a cycle of the main loop, and then 
+resuming any in-progress read/write actions.

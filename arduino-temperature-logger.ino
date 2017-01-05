@@ -47,7 +47,7 @@ unsigned int button_left_time_previous;
 unsigned int button_right_time_previous;
 
 // LED variables:
-boolean led_1_enabled;
+int led_1_enabled;
 boolean led_2_enabled;
 
 // Display varibles:
@@ -65,11 +65,14 @@ const int recorded_temperatures_length = 900;
 byte recorded_temperatures[recorded_temperatures_length] = { NULL };
 int current_record_index = 0;
 
-// Thread variables
-int pending_sram_read_index = 0;
+// Read/write task variables
+int sram_read_index = -1;
+int eeprom_read_index = -1;
+int eeprom_write_index = -1;
 
 void setup() {
   Serial.begin(9600);
+  Serial.println("");
 
   // Print the sampling period to the serial port
   Serial.print(F("Time: "));
@@ -166,29 +169,15 @@ void loop() {
         && button_right_time_previous >= 300)
     {
       beep();
-      // If the display position is -3, write to EEPROM,
+      // If the display position is -3, request write to EEPROM
       if (display_index == -3)
       {
-        Serial.print(F("Time: "));
-        Serial.print(millis() / 1000.0);
-        Serial.println(F(" | Starting Write to EEPROM"));
-        writeToEEPROM();
-        Serial.print(F("Time: "));
-        Serial.print(millis() / 1000.0);
-        Serial.println(F(" | Ending Write to EPROM"));
-        loops_since_action = 0;
+        eeprom_write_index = 0;
       }
-      // If the display position is -2, read from EEPROM,
+      // If the display position is -2, request read from EEPROM
       else if (display_index == -2)
       {
-        Serial.print(F("Time: "));
-        Serial.print(millis() / 1000.0);
-        Serial.println(F(" | Starting Read from EEPROM"));
-        readFromEEPROM();
-        Serial.print(F("Time: "));
-        Serial.print(millis() / 1000.0);
-        Serial.println(F(" | Ending Read from EEPROM"));
-        loops_since_action = 0;
+        eeprom_read_index = 0;
       }
     }
     // If both buttons have been released after at least 0.5 seconds,
@@ -196,20 +185,10 @@ void loop() {
              && button_right_time_previous >= 50)
     {
       beep();
-      // If the display position is -1, read from SRAM
+      // If the display position is -1, request read from SRAM
       if (display_index == -1)
       {
-        Serial.print(F("Time: "));
-        Serial.print(millis() / 1000.0);
-        Serial.println(F(" | Starting Read from SRAM"));
-        readFromSRAM();
-        if (pending_sram_read_index == 0)
-        {
-          Serial.print(F("Time: "));
-          Serial.print(millis() / 1000.0);
-          Serial.println(F(" | Ending Read from SRAM"));
-          loops_since_action = 0;
-        }
+        sram_read_index = 0;
       }
     }
     // If the right button was pressed briefly, increase display index if under history length
@@ -322,18 +301,6 @@ void loop() {
       display_mode = 'l';
     }
   }
-  
-  if (pending_sram_read_index != 0)
-  {
-    readFromSRAM();
-    if (pending_sram_read_index == 0)
-    {
-      Serial.print(F("Time: "));
-      Serial.print(millis() / 1000.0);
-      Serial.println(F(" | Ending Read from SRAM"));
-      loops_since_action = 0;
-    }
-  }
 
   // Save the button press times from this cycle
   button_left_time_previous = button_left_time;
@@ -351,8 +318,8 @@ void loop() {
     Serial.println(F(" mV"));
   }
 
-  // Every 75 cycles, read, update, and print the temperature, and turn on LED 1
-  if (loop_number % 75 == 0)
+  // Every second, read, update, and print the temperature, and turn on LED 1
+  if (is_first_loop_of_second)
   {
     Serial.print(F("Time: "));
     Serial.print(millis() / 1000.0);
@@ -364,10 +331,14 @@ void loop() {
     led_1_enabled = 1;
   }
 
-  // Every 75 cycles, delayed by 20 cycles, turn off LED 1
-  if ((loop_number - 20) % 75 == 0)
+  // If LED 1 has been on for 20 cycles, turn it off
+  if (led_1_enabled > 0)
   {
-    led_1_enabled = 0;
+    led_1_enabled++;
+    if (led_1_enabled > 20)
+    {
+      led_1_enabled = 0;
+    }
   }
 
   // Except in the first second,
@@ -422,6 +393,9 @@ void loop() {
 
   // Update the digital outputs:
   updateDigitalOutputs();
+  
+  // Manage any pending read/write tasks
+  manageReadWriteTasks();
 
   // Delay 10 ms before starting next cycle
   delay(10);
@@ -528,10 +502,15 @@ void updateScreen()
       {
         lcd.print(F("Continue Holding"));
       }
+      // If the action is in progress,
+      else if (eeprom_write_index != -1)
+      {
+        lcd.print(F("Write Pending"));
+      }
       // If the action just completed, show confirmation
       else if (loops_since_action < 100)
       {
-        lcd.print(F("Write Complete"));
+        lcd.print(F("Writing"));
       }
       // If the buttons are not being held, print instruction to hold it
       else
@@ -559,6 +538,11 @@ void updateScreen()
         else if (button_left_time >= 1 && button_right_time >= 1)
         {
           lcd.print(F("Continue Holding"));
+        }
+        // If the action is in progress,
+        else if (eeprom_read_index != -1)
+        {
+          lcd.print(F("Reading"));
         }
         // If the action just completed, show confirmation
         else if (loops_since_action < 100)
@@ -596,6 +580,11 @@ void updateScreen()
         else if (button_left_time >= 1 && button_right_time >= 1)
         {
           lcd.print(F("Continue Holding"));
+        }
+        // If the action is in progress,
+        else if (sram_read_index != -1)
+        {
+          lcd.print(F("Reading"));
         }
         // If the action just completed, show confirmation
         else if (loops_since_action < 100)
@@ -750,7 +739,7 @@ void updateScreen()
 // Update the digital outputs based on corresponding variables
 void updateDigitalOutputs()
 {
-  if (led_1_enabled == 1)
+  if (led_1_enabled)
   {
     digitalWrite(pin_led_1, HIGH);
   }
@@ -759,7 +748,7 @@ void updateDigitalOutputs()
     digitalWrite(pin_led_1, LOW);
   }
 
-  if (led_2_enabled == 1)
+  if (led_2_enabled)
   {
     digitalWrite(pin_led_2, HIGH);
   }
@@ -768,7 +757,7 @@ void updateDigitalOutputs()
     digitalWrite(pin_led_2, LOW);
   }
 
-  if (lcd_backlight_enabled == 1)
+  if (lcd_backlight_enabled)
   {
     digitalWrite(pin_lcd_bl1, HIGH);
   }
@@ -810,71 +799,153 @@ void updateSupplyVoltage()
   return;
 }
 
+void manageReadWriteTasks()
+{
+  if (sram_read_index != -1)
+  {
+    // If the read is just starting,
+    if (sram_read_index == 0)
+    {
+      Serial.print(F("Time: "));
+      Serial.print(millis() / 1000.0);
+      Serial.println(F(" | Starting Read from SRAM"));
+    }
+    readFromSRAM();
+    // If the read just finished,
+    if (sram_read_index == -1)
+    {
+      Serial.print(F("Time: "));
+      Serial.print(millis() / 1000.0);
+      Serial.println(F(" | Ending Read from SRAM"));
+      loops_since_action = 0;
+    }
+  }
+  if (eeprom_read_index != -1)
+  {
+    // If the read is just starting,
+    if (eeprom_read_index == 0)
+    {
+      Serial.print(F("Time: "));
+      Serial.print(millis() / 1000.0);
+      Serial.println(F(" | Starting Read from EEPROM"));
+    }
+    readFromEEPROM();
+    // If the read just finished,
+    if (eeprom_read_index == -1)
+    {
+      Serial.print(F("Time: "));
+      Serial.print(millis() / 1000.0);
+      Serial.println(F(" | Ending Read from EEPROM"));
+      loops_since_action = 0;
+    }
+  }
+  if (eeprom_write_index != -1)
+  {
+    // If the read is just starting,
+    if (eeprom_write_index == 0)
+    {
+      Serial.print(F("Time: "));
+      Serial.print(millis() / 1000.0);
+      Serial.println(F(" | Starting Write to EEPROM"));
+    }
+    writeToEEPROM();
+    // If the read just finished,
+    if (eeprom_write_index == -1)
+    {
+      Serial.print(F("Time: "));
+      Serial.print(millis() / 1000.0);
+      Serial.println(F(" | Ending Write to EEPROM"));
+      loops_since_action = 0;
+    }
+  }
+}
+
 // Print to the serial port each record in the SRAM
 void readFromSRAM()
 {
-  for (int i = pending_sram_read_index; i < current_record_index; i++)
+   // If there are no records yet,
+  if (current_record_index == 0)
   {
-    if (i < recorded_temperatures_length)
+    sram_read_index = -1;
+    return;
+  }
+  
+  while (true)
+  {
+    Serial.print(sram_read_index);
+    Serial.print(F(","));
+    Serial.println(recorded_temperatures[sram_read_index]);
+    sram_read_index++;
+    // If the read is finished, set the index to -1 and break
+    if (sram_read_index == current_record_index || sram_read_index == recorded_temperatures_length)
     {
-      Serial.print(i);
-      Serial.print(F(","));
-      Serial.println(recorded_temperatures[i]);
-    }
-    else
-    {
+      sram_read_index = -1;
       break;
     }
-    if (i == current_record_index - 1)
+    // If the index is a multiple of 20, pause the read
+    else if (sram_read_index % 20 == 0)
     {
-      pending_sram_read_index = 0;
-    }
-    else if (i % 50 == 0 && i != 0)
-    {
-      pending_sram_read_index = i + 1;
       break;
     }
   }
 }
 
-// Print to the serial port each record under 200 in the EEPROM
+// Print to the serial port each record in the EEPROM
 void readFromEEPROM()
 {
   byte value;
-  int i = 0;
-  while (i <= E2END)
+  while (eeprom_read_index <= E2END)
   {
-    value = EEPROM.read(i);
+    value = EEPROM.read(eeprom_read_index);
     if (value < 200)
     {
-      Serial.print(i);
+      Serial.print(eeprom_read_index);
       Serial.print(F(","));
       Serial.println(value, DEC);
+      eeprom_read_index++;
     }
+    // If the value is over 200 (indicating the end),
     else
+    {
+      eeprom_read_index = -1;
+      break;
+    }
+    // If the index is a multiple of 20, pause the read
+    if (eeprom_read_index % 20 == 0)
     {
       break;
     }
-    i++;
   }
 }
 
 // Write each record in SRAM to the EEPROM
 void writeToEEPROM()
 {
-  int i;
-  for (i = 0; i < current_record_index; i++)
+  // If there are no records yet,
+  if (current_record_index == 0)
   {
-    if (i < E2END && i < recorded_temperatures_length) // E2END is the maximum EEPROM address
+    EEPROM.write(eeprom_write_index, 255); // 255 indicates end of actual data
+    eeprom_write_index = -1;
+    return;
+  }
+  
+  while (eeprom_write_index < E2END) // E2END is the maximum EEPROM address
+  {
+    EEPROM.write(eeprom_write_index, recorded_temperatures[eeprom_write_index]);
+    eeprom_write_index++;
+    // If the write is finished, write 255, set the index to -1, and break
+    if (eeprom_write_index == current_record_index || eeprom_write_index == recorded_temperatures_length)
     {
-      EEPROM.write(i, recorded_temperatures[i]);
+      EEPROM.write(eeprom_write_index, 255); // 255 indicates end of actual data
+      eeprom_write_index = -1;
+      break;
     }
-    else
+    // If the index is a multiple of 20, pause the read
+    else if (eeprom_write_index % 20 == 0)
     {
       break;
     }
   }
-  EEPROM.write(i, 255); // 255 indicates end of actual data
 }
 
 // Find the median of an array of n float variables
