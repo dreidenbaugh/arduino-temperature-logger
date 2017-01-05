@@ -65,6 +65,9 @@ const int recorded_temperatures_length = 900;
 byte recorded_temperatures[recorded_temperatures_length] = { NULL };
 int current_record_index = 0;
 
+// Thread variables
+int pending_sram_read_index = 0;
+
 void setup() {
   Serial.begin(9600);
 
@@ -200,10 +203,13 @@ void loop() {
         Serial.print(millis() / 1000.0);
         Serial.println(F(" | Starting Read from SRAM"));
         readFromSRAM();
-        Serial.print(F("Time: "));
-        Serial.print(millis() / 1000.0);
-        Serial.println(F(" | Ending Read from SRAM"));
-        loops_since_action = 0;
+        if (pending_sram_read_index == 0)
+        {
+          Serial.print(F("Time: "));
+          Serial.print(millis() / 1000.0);
+          Serial.println(F(" | Ending Read from SRAM"));
+          loops_since_action = 0;
+        }
       }
     }
     // If the right button was pressed briefly, increase display index if under history length
@@ -314,6 +320,18 @@ void loop() {
     {
       beep();
       display_mode = 'l';
+    }
+  }
+  
+  if (pending_sram_read_index != 0)
+  {
+    readFromSRAM();
+    if (pending_sram_read_index == 0)
+    {
+      Serial.print(F("Time: "));
+      Serial.print(millis() / 1000.0);
+      Serial.println(F(" | Ending Read from SRAM"));
+      loops_since_action = 0;
     }
   }
 
@@ -795,7 +813,7 @@ void updateSupplyVoltage()
 // Print to the serial port each record in the SRAM
 void readFromSRAM()
 {
-  for (int i = 0; i < current_record_index; i++)
+  for (int i = pending_sram_read_index; i < current_record_index; i++)
   {
     if (i < recorded_temperatures_length)
     {
@@ -805,6 +823,15 @@ void readFromSRAM()
     }
     else
     {
+      break;
+    }
+    if (i == current_record_index - 1)
+    {
+      pending_sram_read_index = 0;
+    }
+    else if (i % 50 == 0 && i != 0)
+    {
+      pending_sram_read_index = i + 1;
       break;
     }
   }
