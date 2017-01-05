@@ -61,7 +61,7 @@ float supply_voltage; // units are millivolts (mV)
 const int recent_temperatures_length = 30;
 float recent_temperatures[recent_temperatures_length] = { NULL };
 float recent_temperatures_median;
-const int recorded_temperatures_length = 500;
+const int recorded_temperatures_length = 900;
 byte recorded_temperatures[recorded_temperatures_length] = { NULL };
 int current_record_index = 0;
 
@@ -238,7 +238,7 @@ void loop() {
       }
       else
       {
-        display_index = recorded_temperatures_length - 1;
+        display_index = recorded_temperatures_length;
       }
     }
   }

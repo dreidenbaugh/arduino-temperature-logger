@@ -26,13 +26,13 @@ LCD, and LED 1 glows for about 0.2 seconds to indicate that a
 measurement has been taken.
 
 In addition to an array of the 30 most recent measurements, the program 
-stores 500 values in a history array as bytes stored in the static 
+stores 900 values in a history array as bytes stored in the static 
 random access memory (SRAM). The most recently measured median 
 temperature is added to this array at a defined sampling period, and 
 LED 2 glows for one second. The sampling period is by default set to 4 
-minutes, allowing approximately 33.3 hours of samples before the 
-history is full. Once the history array fills, LED 2 glows 
-continuously to alert the user.
+minutes, allowing approximately 60 hours of samples before the history 
+is full. Once the history array fills, LED 2 glows continuously to 
+alert the user.
 
 ## User Interface
 The main screen of the LCD shows the time elapsed since the program 
