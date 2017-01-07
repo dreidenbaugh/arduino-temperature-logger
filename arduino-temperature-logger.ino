@@ -60,6 +60,8 @@ float supply_voltage; // units are millivolts (mV)
 // Array variables:
 const int recent_temperatures_length = 30;
 float recent_temperatures[recent_temperatures_length] = { NULL };
+int recent_temperatures_size = 0;
+int recent_temperatures_last = 0;
 float recent_temperatures_median;
 const int recorded_temperatures_length = 900;
 byte recorded_temperatures[recorded_temperatures_length] = { NULL };
@@ -409,19 +411,20 @@ float updateTemperature()
   float voltage = (analogRead(pin_temp_sensor) / 1024.0) * supply_voltage / 1000.0;
   current_temperature = (voltage - 0.5) * 100.0 * 9.0 / 5.0 + 32.0;
 
-  // Add to recent_temperatures after shifting old data while counting data points
-  int recent_temperaturesNumber = 0;
-  for (int i = recent_temperatures_length - 2; i >= 0; i--)
+  // Add to recent_temperatures circular buffer
+  recent_temperatures[recent_temperatures_last] = current_temperature;
+  if (recent_temperatures_size < recent_temperatures_length)
   {
-    if (recent_temperatures[i])
-    {
-      recent_temperaturesNumber++;
-      recent_temperatures[i + 1] = recent_temperatures[i];
-    }
+    recent_temperatures_size++;
   }
-  recent_temperaturesNumber++;
-  recent_temperatures[0] = current_temperature;
-  recent_temperatures_median = median(recent_temperatures, recent_temperaturesNumber);
+  recent_temperatures_last++;
+  if (recent_temperatures_last == recent_temperatures_length)
+  {
+    recent_temperatures_last = 0;
+  }
+  
+  // Calculate the median of the circular buffer
+  recent_temperatures_median = median(recent_temperatures, recent_temperatures_size);
 
   return current_temperature;
 }
